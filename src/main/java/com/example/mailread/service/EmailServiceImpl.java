@@ -26,6 +26,8 @@ public class EmailServiceImpl {
     private static final String FOLDER_INBOX = "INBOX";
     private static final String HOST = "imap.gmail.com";
     private static final int PORT = 993;
+    private static final String USER = "anyteste123@gmail.com";
+    private static final String PASS = "!@#Mudar";
     private static final String IMAP_PROTOCOL = "imaps";
 
     private EmailCredentials emailCredentials;
@@ -56,9 +58,8 @@ public class EmailServiceImpl {
 
     private void connectEmail() throws MessagingException {
         Session emailSession = Session.getDefaultInstance(new Properties());
-
         imapStore = (IMAPStore) emailSession.getStore(IMAP_PROTOCOL);
-        imapStore.connect(HOST, PORT, "anyteste123@gmail.com", "!@#Mudar");
+        imapStore.connect(HOST, PORT, USER, PASS);
     }
 
     private Folder getFolder(String folderName) throws MessagingException {

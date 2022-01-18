@@ -16,12 +16,13 @@ public class EmailService {
 
     private EmailServiceImpl emailServiceImpl;
 
+
     @Autowired
     public EmailService(EmailServiceImpl emailServiceImpl) {
         this.emailServiceImpl = emailServiceImpl;
     }
 
-    //    @Scheduled(cron = "*/30 * * * * *") // default: every 30 seconds
+//        @Scheduled(cron = "*/30 * * * * *") // default: every 30 seconds
     public void getEmailsNeverSeen() throws MessagingException, IOException {
         List<EmailVO> newMessages = emailServiceImpl.getNewMessages();
         logger.info("Found " + newMessages.size() + " new message(s)!");
