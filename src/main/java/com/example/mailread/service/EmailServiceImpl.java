@@ -101,6 +101,7 @@ public class EmailServiceImpl {
             @Override
             public boolean match(Message message) {
                 try {
+                    logger.info("subject encontrado : " + message.getSubject());
                     return message.getSubject().toLowerCase().contains(SUBJECT_MAIL);
                 } catch (MessagingException ex) {
                     ex.printStackTrace();
@@ -114,6 +115,7 @@ public class EmailServiceImpl {
         Message[] messages = folder.search(searchTerm);
         return messages;
     }
+
 
     private void closeFolder(Folder inbox) throws MessagingException {
         if (inbox != null) {

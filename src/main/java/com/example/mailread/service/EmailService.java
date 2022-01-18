@@ -24,7 +24,6 @@ public class EmailService {
     //    @Scheduled(cron = "*/30 * * * * *") // default: every 30 seconds
     public void getEmailsNeverSeen() throws MessagingException, IOException {
         List<EmailVO> newMessages = emailServiceImpl.getNewMessages();
-        //TODO: COLOCAR NA FILA
         logger.info("Found " + newMessages.size() + " new message(s)!");
     }
 
