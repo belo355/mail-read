@@ -3,16 +3,16 @@ package com.example.mailread.service.listener;
 import com.sun.mail.imap.IMAPStore;
 
 import com.sun.mail.imap.* ;
+import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import javax.mail.Folder;
-import javax.mail.FolderClosedException;
-import javax.mail.MessagingException;
-import javax.mail.Session;
+import javax.mail.*;
 import javax.mail.event.MessageCountEvent;
 import javax.mail.event.MessageCountListener;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -60,11 +60,8 @@ public class MailboxService {
             imapStore = connectEmail();
             logger.info("Success conected!");
             folder = getFolder(FOLDER_INBOX);
-//            try{
-//                folder.open(Folder.READ_ONLY);
-//            }catch (NullPointerException e){
-//                logger.error(e.getMessage());
-//            }
+//            Message[] messages = folder.getMessages();
+//            List<Message> messagesList = Arrays.asList(messages);
 
             if (!imapStore.hasCapability("IDLE")) {
                 throw new UnsupportedOperationException("The imap server does not support IDLE command");
@@ -75,30 +72,29 @@ public class MailboxService {
                 @Override
                 public void messagesAdded(MessageCountEvent messageCountEvent) {
                     try {
+                        //action for received message
                         EmailHandler.handleMessages(imapFolder, messageCountEvent.getMessages());
                     } catch (Exception e1) {
                         logger.error("Unexpected error occurs while handling messages", e1);
                     }
                 }
-
                 @Override
                 public void messagesRemoved(MessageCountEvent e) {
-
+                    //action for remove message
                 }
             };
-
             // Add the handler for messages to be added in the future.
-            imapFolder.addMessageCountListener(messageCountListener); //null imapFolder
+            imapFolder.addMessageCountListener(messageCountListener);
 
             idleThread = new Thread() {
+                @SneakyThrows
                 @Override
                 public void run() {
                     logger.info("Start the Email Receiving Thread");
                     while (true) {
                         if (isStopping) break;
                         try {
-                            // Notify the message count listener if the value of EXISTS response is
-                            // larger than realTotal.
+                            // Notify the message count listener if the value of EXISTS response is larger than realTotal.
                             imapFolder.idle();
                         } catch (FolderClosedException e) {
                             if (isStopping) break;
@@ -107,7 +103,8 @@ public class MailboxService {
                             imapFolder = reopenFolder();
                         } catch (Exception e) {
                             logger.warn("Failed to run IDLE command; abort", e);
-                            break;
+                            Thread.sleep(1000);
+                            //break;
                         }
                     }
                     logger.info("Stop the Email Receiving Thread");
@@ -130,9 +127,14 @@ public class MailboxService {
     }
 
     private Folder getFolder(String folderName) throws MessagingException {
-        Folder inbox = imapStore.getFolder(folderName);
-        if (inbox != null) inbox.open(Folder.READ_WRITE);
-        return inbox;
+        Folder folder = imapStore.getFolder(folderName);
+        if (folder != null) {
+            folder.open(Folder.READ_WRITE);
+            logger.info("folder open!");
+            return folder;
+        }
+        logger.info("folder not open!");
+        return folder;
     }
 
     private IMAPStore connectEmail() throws MessagingException {
