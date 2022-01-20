@@ -1,25 +1,23 @@
-package com.example.mailread.config;
+package com.example.mailread.listener;
 
-import com.example.mailread.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.mail.MessagingException;
-import java.io.IOException;
 
 @RestController
 public class MailController {
 
     @Autowired
-    private EmailService emailService;
+    private MailboxServiceImpl mailboxServiceImpl;
 
-    @RequestMapping(value = "/", method = RequestMethod.GET)
-    public void sendEmail() {
+    @RequestMapping(value = "/teste", method = RequestMethod.GET)
+    public void startListener() {
         try {
-            emailService.getEmailsNeverSeen();
-        } catch (MessagingException | IOException e) {
+            mailboxServiceImpl.start();
+        } catch (MessagingException  e) {
             e.printStackTrace();
         }
     }

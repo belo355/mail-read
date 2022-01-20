@@ -1,6 +1,6 @@
-package com.example.mailread.service;
+package com.example.mailread.cron.service;
 
-import com.example.mailread.config.EmailVO;
+import com.example.mailread.cron.configs.EmailVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,9 +24,5 @@ public class EmailService {
     public void getEmailsNeverSeen() throws MessagingException, IOException {
         List<EmailVO> newMessages = emailServiceImpl.getNewMessages();
         logger.info("Found {} new message(s)!", newMessages.size() );
-        try{
-            //adicionar na fila MQ
-            logger.info("Adicionando mensagem na fila ");
-        }catch (Exception e ){}
     }
 }

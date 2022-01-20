@@ -1,4 +1,4 @@
-package com.example.mailread.service.listener.v2;
+package com.example.mailread.listener;
 
 import com.sun.mail.imap.IMAPFolder;
 import org.slf4j.Logger;

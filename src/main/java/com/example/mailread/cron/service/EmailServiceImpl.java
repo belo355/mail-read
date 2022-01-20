@@ -1,7 +1,8 @@
-package com.example.mailread.service;
+package com.example.mailread.cron.service;
 
-import com.example.mailread.config.EmailCredentials;
-import com.example.mailread.config.EmailVO;
+import com.example.mailread.cron.configs.EmailCredentials;
+import com.example.mailread.cron.configs.EmailVO;
+import com.sun.mail.imap.IMAPFolder;
 import com.sun.mail.imap.IMAPStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +33,7 @@ public class EmailServiceImpl extends Thread {
 
     private EmailCredentials emailCredentials;
     private IMAPStore imapStore;
+    private IMAPFolder imapFolder;
 
     @Autowired
     public EmailServiceImpl(EmailCredentials emailCredentials) {
@@ -40,18 +42,17 @@ public class EmailServiceImpl extends Thread {
 
     public List<EmailVO> getNewMessages() throws MessagingException, IOException {
         logger.info("Verifying new messages inbox...");
-        Folder inbox = null;
         try {
             connectEmail();
-            inbox = getFolder(FOLDER_INBOX);
-            List<EmailVO> emailVOS = readMessagesFromFolder(inbox);
+            getFolder(FOLDER_INBOX);
+            List<EmailVO> emailVOS = readMessagesFromFolderAndSetFlagSeen(imapFolder);
             logger.info("Success on verifying new messages inbox!");
             return emailVOS;
         } catch (MessagingException | IOException exception) {
             logger.error("Error on verifying new messages: " + exception.getMessage());
             throw exception;
         } finally {
-            closeFolder(inbox);
+            closeFolder(imapFolder);
             closeImapStore();
         }
     }
@@ -63,13 +64,17 @@ public class EmailServiceImpl extends Thread {
         logger.info("connected email!");
     }
 
-    private Folder getFolder(String folderName) throws MessagingException {
-        Folder inbox = imapStore.getFolder(folderName);
-        if (inbox != null) inbox.open(Folder.READ_WRITE);
-        return inbox;
+    private void getFolder(String folderName) throws MessagingException {
+        this.imapFolder = (IMAPFolder) imapStore.getFolder(folderName);
+        if (this.imapFolder != null) {
+            this.imapFolder.open(Folder.READ_WRITE);
+            logger.info("folder open!");
+        }else {
+            logger.info("folder not open!");
+        }
     }
 
-    private List<EmailVO> readMessagesFromFolder(Folder folder) throws MessagingException, IOException {
+    private List<EmailVO> readMessagesFromFolderAndSetFlagSeen(Folder folder) throws MessagingException, IOException {
         if (folder == null) {
             logger.info("No folder found.");
             return new ArrayList<>();
@@ -88,7 +93,6 @@ public class EmailServiceImpl extends Thread {
                     .build());
             message.setFlag(Flags.Flag.SEEN, true);
         }
-
         return emails;
     }
 
