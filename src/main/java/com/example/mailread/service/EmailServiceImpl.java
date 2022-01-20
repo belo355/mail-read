@@ -15,6 +15,7 @@ import javax.mail.search.FlagTerm;
 import javax.mail.search.SearchTerm;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -60,6 +61,7 @@ public class EmailServiceImpl {
         Session emailSession = Session.getDefaultInstance(new Properties());
         imapStore = (IMAPStore) emailSession.getStore(IMAP_PROTOCOL);
         imapStore.connect(HOST, PORT, USER, PASS);
+        logger.info("connected email!");
     }
 
     private Folder getFolder(String folderName) throws MessagingException {
@@ -102,8 +104,8 @@ public class EmailServiceImpl {
             @Override
             public boolean match(Message message) {
                 try {
-                    logger.info("subject encontrado : " + message.getSubject());
-                    return message.getSubject().toLowerCase().contains(SUBJECT_MAIL);
+                    logger.info("subject : " + message.getSubject());
+                    return message.getSubject().toLowerCase().contains("teste");
                 } catch (MessagingException ex) {
                     ex.printStackTrace();
                 }
@@ -114,6 +116,7 @@ public class EmailServiceImpl {
         final SearchTerm[] filters = {unseenFlagTerm, subjectSearchTerm};
         final SearchTerm searchTerm = new AndTerm(filters);
         Message[] messages = folder.search(searchTerm);
+        List<Message> messagesList = Arrays.asList(messages);
         return messages;
     }
 

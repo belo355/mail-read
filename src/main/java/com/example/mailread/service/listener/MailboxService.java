@@ -47,7 +47,7 @@ public class MailboxService {
     private static final String PASS = "!@#Mudar";
 
     private IMAPStore store;
-    private static IMAPFolder imapFolder;
+    private IMAPFolder imapFolder;
     private Thread idleThread;
     private final boolean isStopping = false;
 
@@ -55,19 +55,18 @@ public class MailboxService {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public void startEmailListener() throws MessagingException, UnsupportedOperationException {
-        Folder folder = null;
+        //Folder folder = null;
         try {
-            imapStore = connectEmail();
+            connectEmail();
             logger.info("Success conected!");
-            folder = getFolder(FOLDER_INBOX);
-//            Message[] messages = folder.getMessages();
-//            List<Message> messagesList = Arrays.asList(messages);
+            openFolder(FOLDER_INBOX);
+            Message[] messages = imapFolder.getMessages();
+            List<Message> messagesList = Arrays.asList(messages);
 
             if (!imapStore.hasCapability("IDLE")) {
                 throw new UnsupportedOperationException("The imap server does not support IDLE command");
             }
 
-            imapFolder = (IMAPFolder) imapStore.getFolder(FOLDER_INBOX);
             MessageCountListener messageCountListener = new MessageCountListener() {
                 @Override
                 public void messagesAdded(MessageCountEvent messageCountEvent) {
@@ -80,7 +79,6 @@ public class MailboxService {
                 }
                 @Override
                 public void messagesRemoved(MessageCountEvent e) {
-                    //action for remove message
                 }
             };
             // Add the handler for messages to be added in the future.
@@ -94,8 +92,11 @@ public class MailboxService {
                     while (true) {
                         if (isStopping) break;
                         try {
-                            // Notify the message count listener if the value of EXISTS response is larger than realTotal.
-                            imapFolder.idle();
+                            if(!imapFolder.isOpen()){
+                                connectEmail();
+                                openFolder(FOLDER_INBOX);
+                            }
+                            imapFolder.idle(); // Notify the message count listener if the value of EXISTS response is larger than realTotal.
                         } catch (FolderClosedException e) {
                             if (isStopping) break;
                             // reconnect
@@ -116,7 +117,7 @@ public class MailboxService {
             logger.error("Error on verifying new messages: " + e.getMessage());
             throw e;
         } finally {
-            closeFolder(folder);
+            closeFolder();
             closeImapStore();
         }
 
@@ -126,27 +127,25 @@ public class MailboxService {
         return null;
     }
 
-    private Folder getFolder(String folderName) throws MessagingException {
-        Folder folder = imapStore.getFolder(folderName);
-        if (folder != null) {
-            folder.open(Folder.READ_WRITE);
+    private void openFolder(String folderName) throws MessagingException {
+        this.imapFolder = (IMAPFolder) imapStore.getFolder(folderName);
+        if (this.imapFolder != null) {
+            this.imapFolder.open(Folder.READ_WRITE);
             logger.info("folder open!");
-            return folder;
+        }else {
+            logger.info("folder not open!");
         }
-        logger.info("folder not open!");
-        return folder;
     }
 
-    private IMAPStore connectEmail() throws MessagingException {
+    private void connectEmail() throws MessagingException {
         Session emailSession = Session.getDefaultInstance(new Properties());
-        imapStore = (IMAPStore) emailSession.getStore(IMAP_PROTOCOL);
-        imapStore.connect(HOST, PORT, USER, PASS);
-        return imapStore;
+        this.imapStore = (IMAPStore) emailSession.getStore(IMAP_PROTOCOL);
+        this.imapStore.connect(HOST, PORT, USER, PASS);
     }
 
-    private void closeFolder(Folder inbox) throws MessagingException {
-        if (inbox != null) {
-            inbox.close(false);
+    private void closeFolder() throws MessagingException {
+        if (imapFolder != null) {
+            imapFolder.close(false);
         }
     }
 
