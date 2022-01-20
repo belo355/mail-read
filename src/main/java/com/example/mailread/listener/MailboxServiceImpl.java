@@ -50,7 +50,7 @@ public class MailboxServiceImpl {
                 @Override
                 public void messagesAdded(MessageCountEvent e) {
                     try {
-                        handleMessages(imapFolder, e.getMessages());
+                        handleMessages(imapFolder);
                     } catch (Exception e1) {
                         logger.error("Unexpected error occurs while handling messages", e1);
                     }
@@ -66,12 +66,12 @@ public class MailboxServiceImpl {
     }
 
 
-    private void handleMessages(IMAPFolder folder, Message[] messages) throws MessagingException {
-        logger.info("listener: qtd msg chegou ==> {} , momento ==> {}" ,messages.length ,LocalTime.now());
-        Message [] fullMessages = getNewMessages(folder);
-        logger.info("quantidade de mensagem capturadas apos aviso ==> {}", fullMessages.length);
+    private void handleMessages(IMAPFolder folder) throws MessagingException {
+        logger.info("new mail received! ==> total mails ==> {}, momento ==> {}", folder.getMessageCount(), LocalTime.now());
+        Message [] messages = searchForNewMessages(folder);
+        logger.info("quantidade de mensagem capturadas apos aviso ==> {}", messages.length);
         logger.info("envio para MQ ... ");
-        setSeenisTrue(fullMessages);
+        setSeenisTrue(messages);
 
         //start multithead para envio para fila
 //        idleThread = new Thread() {
@@ -151,7 +151,7 @@ public class MailboxServiceImpl {
         }
     }
 
-    private Message[] getNewMessages(Folder folder) throws MessagingException {
+    private Message[] searchForNewMessages(Folder folder) throws MessagingException {
         Flags seen = new Flags(Flags.Flag.SEEN);
         FlagTerm unseenFlagTerm = new FlagTerm(seen, false);
 
