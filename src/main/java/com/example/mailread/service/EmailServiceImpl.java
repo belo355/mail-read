@@ -15,15 +15,14 @@ import javax.mail.search.FlagTerm;
 import javax.mail.search.SearchTerm;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
 @Service
-public class EmailServiceImpl {
+public class EmailServiceImpl extends Thread {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    private static final String SUBJECT_MAIL = "Test Subject";
+    private static final String SUBJECT_MAIL = "teste";
     private static final String FOLDER_INBOX = "INBOX";
     private static final String HOST = "imap.gmail.com";
     private static final int PORT = 993;
@@ -73,11 +72,9 @@ public class EmailServiceImpl {
     private List<EmailVO> readMessagesFromFolder(Folder folder) throws MessagingException, IOException {
         if (folder == null) {
             logger.info("No folder found.");
-            return null;
+            return new ArrayList<>();
         }
-
-        Message[] messages = getUnseenMessages(folder);
-
+        Message[] messages = getNewMessages(folder);
         if (messages.length == 0) logger.info("No messages found.");
 
         List<EmailVO> emails = new ArrayList<>();
@@ -89,14 +86,13 @@ public class EmailServiceImpl {
                     .subject(message.getSubject())
                     .content(message.getContent().toString())
                     .build());
-
             message.setFlag(Flags.Flag.SEEN, true);
         }
 
         return emails;
     }
 
-    private Message[] getUnseenMessages(Folder folder) throws MessagingException {
+    private Message[] getNewMessages(Folder folder) throws MessagingException {
         Flags seen = new Flags(Flags.Flag.SEEN);
         FlagTerm unseenFlagTerm = new FlagTerm(seen, false);
 
@@ -104,8 +100,7 @@ public class EmailServiceImpl {
             @Override
             public boolean match(Message message) {
                 try {
-                    logger.info("subject : " + message.getSubject());
-                    return message.getSubject().toLowerCase().contains("teste");
+                    return message.getSubject().toLowerCase().contains(SUBJECT_MAIL);
                 } catch (MessagingException ex) {
                     ex.printStackTrace();
                 }
@@ -115,9 +110,8 @@ public class EmailServiceImpl {
 
         final SearchTerm[] filters = {unseenFlagTerm, subjectSearchTerm};
         final SearchTerm searchTerm = new AndTerm(filters);
-        Message[] messages = folder.search(searchTerm);
-        List<Message> messagesList = Arrays.asList(messages);
-        return messages;
+//        List<Message> messagesList = Arrays.asList(messages);
+        return folder.search(searchTerm);
     }
 
 
@@ -132,4 +126,5 @@ public class EmailServiceImpl {
             imapStore.close();
         }
     }
+
 }

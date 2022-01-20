@@ -1,4 +1,4 @@
-package com.example.mailread.config;
+package com.example.mailread.service.listener.v2;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;

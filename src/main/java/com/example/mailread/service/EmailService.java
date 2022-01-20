@@ -13,9 +13,7 @@ import java.util.List;
 @Service
 public class EmailService {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
     private EmailServiceImpl emailServiceImpl;
-
 
     @Autowired
     public EmailService(EmailServiceImpl emailServiceImpl) {
@@ -25,7 +23,10 @@ public class EmailService {
 //        @Scheduled(cron = "*/30 * * * * *") // default: every 30 seconds
     public void getEmailsNeverSeen() throws MessagingException, IOException {
         List<EmailVO> newMessages = emailServiceImpl.getNewMessages();
-        logger.info("Found " + newMessages.size() + " new message(s)!");
+        logger.info("Found {} new message(s)!", newMessages.size() );
+        try{
+            //adicionar na fila MQ
+            logger.info("Adicionando mensagem na fila ");
+        }catch (Exception e ){}
     }
-
 }
