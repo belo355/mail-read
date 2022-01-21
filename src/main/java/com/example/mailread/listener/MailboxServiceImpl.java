@@ -50,8 +50,6 @@ public class MailboxServiceImpl {
         }else {
             logger.error("Folder is closed ==> {}", imapFolder.getFullName());
         }
-        //imapFolder.addMessageCountListener(messageCountListener);
-        //imapFolder.idle(); //analisar tempo de inatividade de regra para novo idle  -- https://stackovergo.com/pt/q/963390/javamail-keeping-imapfolderidle-alive
     }
 
     private void createMessageCountListener() {
@@ -68,15 +66,14 @@ public class MailboxServiceImpl {
             public void messagesRemoved(MessageCountEvent e) { }
         };
         imapFolder.addMessageCountListener(messageCountListener);
-//        imapFolder.idle();
 
         idleThread = new Thread() {
             @Override
             public void run() {
-                logger.info("Start the Email Receiving ThreadID ==> ", idleThread.getId());
-                while (true) {
+                logger.info("Start the Email Receiving ThreadID ==> {}", idleThread.getId());
+                while(true) {
                     try {
-                        imapFolder.idle();
+                        imapFolder.idle(); //analisar tempo de inatividade de regra para novo idle  -- https://stackovergo.com/pt/q/963390/javamail-keeping-imapfolderidle-alive
                     } catch (FolderClosedException e) {
                         logger.info("Reopen the imap folder");
                         try {
@@ -144,15 +141,15 @@ public class MailboxServiceImpl {
 
     private void closeFolder() throws MessagingException {
         if (imapFolder != null) {
-            logger.info("folder closed!");
             imapFolder.close(false);
+            logger.info("folder closed!");
         }
     }
 
     private void closeImapStore() throws MessagingException {
         if (imapStore != null) {
-            logger.info("store closed!");
             imapStore.close();
+            logger.info("store closed!");
         }
     }
 
