@@ -1,6 +1,6 @@
-package com.example.mailread.service;
+package com.example.mailread.cron.service;
 
-import com.example.mailread.config.EmailVO;
+import com.example.mailread.cron.configs.EmailVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +13,6 @@ import java.util.List;
 @Service
 public class EmailService {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
     private EmailServiceImpl emailServiceImpl;
 
     @Autowired
@@ -21,10 +20,9 @@ public class EmailService {
         this.emailServiceImpl = emailServiceImpl;
     }
 
-    //    @Scheduled(cron = "*/30 * * * * *") // default: every 30 seconds
+//        @Scheduled(cron = "*/30 * * * * *") // default: every 30 seconds
     public void getEmailsNeverSeen() throws MessagingException, IOException {
         List<EmailVO> newMessages = emailServiceImpl.getNewMessages();
-        logger.info("Found " + newMessages.size() + " new message(s)!");
+        logger.info("Found {} new message(s)!", newMessages.size() );
     }
-
 }

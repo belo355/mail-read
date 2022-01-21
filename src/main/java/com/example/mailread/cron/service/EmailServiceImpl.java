@@ -1,7 +1,8 @@
-package com.example.mailread.service;
+package com.example.mailread.cron.service;
 
-import com.example.mailread.config.EmailCredentials;
-import com.example.mailread.config.EmailVO;
+import com.example.mailread.cron.configs.EmailCredentials;
+import com.example.mailread.cron.configs.EmailVO;
+import com.sun.mail.imap.IMAPFolder;
 import com.sun.mail.imap.IMAPStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,17 +20,20 @@ import java.util.List;
 import java.util.Properties;
 
 @Service
-public class EmailServiceImpl {
+public class EmailServiceImpl extends Thread {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    private static final String SUBJECT_MAIL = "Test Subject";
+    private static final String SUBJECT_MAIL = "teste";
     private static final String FOLDER_INBOX = "INBOX";
     private static final String HOST = "imap.gmail.com";
     private static final int PORT = 993;
+    private static final String USER = "anyteste123@gmail.com";
+    private static final String PASS = "!@#Mudar";
     private static final String IMAP_PROTOCOL = "imaps";
 
     private EmailCredentials emailCredentials;
     private IMAPStore imapStore;
+    private IMAPFolder imapFolder;
 
     @Autowired
     public EmailServiceImpl(EmailCredentials emailCredentials) {
@@ -38,43 +42,44 @@ public class EmailServiceImpl {
 
     public List<EmailVO> getNewMessages() throws MessagingException, IOException {
         logger.info("Verifying new messages inbox...");
-        Folder inbox = null;
         try {
             connectEmail();
-            inbox = getFolder(FOLDER_INBOX);
-            List<EmailVO> emailVOS = readMessagesFromFolder(inbox);
+            getFolder(FOLDER_INBOX);
+            List<EmailVO> emailVOS = readMessagesFromFolderAndSetFlagSeen(imapFolder);
             logger.info("Success on verifying new messages inbox!");
             return emailVOS;
         } catch (MessagingException | IOException exception) {
             logger.error("Error on verifying new messages: " + exception.getMessage());
             throw exception;
         } finally {
-            closeFolder(inbox);
+            closeFolder(imapFolder);
             closeImapStore();
         }
     }
 
     private void connectEmail() throws MessagingException {
         Session emailSession = Session.getDefaultInstance(new Properties());
-
         imapStore = (IMAPStore) emailSession.getStore(IMAP_PROTOCOL);
-        imapStore.connect(HOST, PORT, "anyteste123@gmail.com", "!@#Mudar");
+        imapStore.connect(HOST, PORT, USER, PASS);
+        logger.info("connected email!");
     }
 
-    private Folder getFolder(String folderName) throws MessagingException {
-        Folder inbox = imapStore.getFolder(folderName);
-        if (inbox != null) inbox.open(Folder.READ_WRITE);
-        return inbox;
+    private void getFolder(String folderName) throws MessagingException {
+        this.imapFolder = (IMAPFolder) imapStore.getFolder(folderName);
+        if (this.imapFolder != null) {
+            this.imapFolder.open(Folder.READ_WRITE);
+            logger.info("folder open!");
+        }else {
+            logger.info("folder not open!");
+        }
     }
 
-    private List<EmailVO> readMessagesFromFolder(Folder folder) throws MessagingException, IOException {
+    private List<EmailVO> readMessagesFromFolderAndSetFlagSeen(Folder folder) throws MessagingException, IOException {
         if (folder == null) {
             logger.info("No folder found.");
-            return null;
+            return new ArrayList<>();
         }
-
-        Message[] messages = getUnseenMessages(folder);
-
+        Message[] messages = getNewMessages(folder);
         if (messages.length == 0) logger.info("No messages found.");
 
         List<EmailVO> emails = new ArrayList<>();
@@ -86,14 +91,12 @@ public class EmailServiceImpl {
                     .subject(message.getSubject())
                     .content(message.getContent().toString())
                     .build());
-
             message.setFlag(Flags.Flag.SEEN, true);
         }
-
         return emails;
     }
 
-    private Message[] getUnseenMessages(Folder folder) throws MessagingException {
+    private Message[] getNewMessages(Folder folder) throws MessagingException {
         Flags seen = new Flags(Flags.Flag.SEEN);
         FlagTerm unseenFlagTerm = new FlagTerm(seen, false);
 
@@ -101,7 +104,6 @@ public class EmailServiceImpl {
             @Override
             public boolean match(Message message) {
                 try {
-                    logger.info("subject encontrado : " + message.getSubject());
                     return message.getSubject().toLowerCase().contains(SUBJECT_MAIL);
                 } catch (MessagingException ex) {
                     ex.printStackTrace();
@@ -112,8 +114,8 @@ public class EmailServiceImpl {
 
         final SearchTerm[] filters = {unseenFlagTerm, subjectSearchTerm};
         final SearchTerm searchTerm = new AndTerm(filters);
-        Message[] messages = folder.search(searchTerm);
-        return messages;
+//        List<Message> messagesList = Arrays.asList(messages);
+        return folder.search(searchTerm);
     }
 
 
@@ -128,4 +130,5 @@ public class EmailServiceImpl {
             imapStore.close();
         }
     }
+
 }
