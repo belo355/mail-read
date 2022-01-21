@@ -21,15 +21,13 @@ public class MailboxServiceImpl {
     private static final String FOLDER_INBOX = "INBOX";
     private static final String IMAP_PROTOCOL = "imaps";
     private static final String HOST = "imap.gmail.com";
-    private static final int PORT = 993;
     private static final String USER = "anyteste123@gmail.com";
     private static final String PASS = "!@#Mudar";
-
-    private IMAPStore store;
-    private IMAPFolder imapFolder;
-    private Thread idleThread;
+    private static final int PORT = 993;
 
     private IMAPStore imapStore;
+    private IMAPFolder imapFolder;
+    private Thread idleThread;
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public void start() throws MessagingException, UnsupportedOperationException {
@@ -39,65 +37,72 @@ public class MailboxServiceImpl {
             startEmailListener();
         } catch (MessagingException e) {
             logger.error("Error on verifying new messages: {} ", e.getMessage());
-        } finally {
-//            closeFolder();
-//            closeImapStore();
         }
     }
 
     private void startEmailListener() throws MessagingException {
-            MessageCountListener messageCountListener = new MessageCountListener() {
-                @Override
-                public void messagesAdded(MessageCountEvent e) {
+        if (!((IMAPStore)imapFolder.getStore()).hasCapability("IDLE")) {
+            throw new UnsupportedOperationException("The imap server does not support IDLE command");
+        }
+        if(imapFolder.isOpen()){
+            createMessageCountListener();
+            logger.info("listener add in ==> {}", imapFolder.getFullName());
+        }else {
+            logger.error("Folder is closed ==> {}", imapFolder.getFullName());
+        }
+        //imapFolder.addMessageCountListener(messageCountListener);
+        //imapFolder.idle(); //analisar tempo de inatividade de regra para novo idle  -- https://stackovergo.com/pt/q/963390/javamail-keeping-imapfolderidle-alive
+    }
+
+    private void createMessageCountListener() {
+        MessageCountListener messageCountListener = new MessageCountListener() {
+            @Override
+            public void messagesAdded(MessageCountEvent e) {
+                try {
+                    handleMessages(imapFolder);
+                } catch (Exception e1) {
+                    logger.error("Unexpected error occurs while handling messages", e1);
+                }
+            }
+            @Override
+            public void messagesRemoved(MessageCountEvent e) { }
+        };
+        imapFolder.addMessageCountListener(messageCountListener);
+//        imapFolder.idle();
+
+        idleThread = new Thread() {
+            @Override
+            public void run() {
+                logger.info("Start the Email Receiving ThreadID ==> ", idleThread.getId());
+                while (true) {
                     try {
-                        handleMessages(imapFolder);
-                    } catch (Exception e1) {
-                        logger.error("Unexpected error occurs while handling messages", e1);
+                        imapFolder.idle();
+                    } catch (FolderClosedException e) {
+                        logger.info("Reopen the imap folder");
+                        try {
+                            imapFolder = reopenFolder();
+                        } catch (MessagingException e1) {
+                            logger.warn("Failed to reopen the imap folder abort", e1);
+                            break;
+                        }
+                    } catch (Exception e) {
+                        logger.warn("Failed to run IDLE command; abort", e);
+                        break;
                     }
                 }
-                @Override
-                public void messagesRemoved(MessageCountEvent e) { }
-            };
-            logger.info("listener add in ==> {}", imapFolder.getFullName());
-            imapFolder.addMessageCountListener(messageCountListener);
-            imapFolder.idle(true);
-            //imapFolder.idle(); //analisar tempo de inatividade de regra para novo idle  -- https://stackovergo.com/pt/q/963390/javamail-keeping-imapfolderidle-alive
-
+                logger.info("Stop the Email Receiving Thread");
+            }
+        };
+        idleThread.start();
     }
 
 
     private void handleMessages(IMAPFolder folder) throws MessagingException {
         logger.info("new mail received! ==> total mails ==> {}, momento ==> {}", folder.getMessageCount(), LocalTime.now());
         Message [] messages = searchForNewMessages(folder);
-        logger.info("quantidade de mensagem capturadas apos aviso ==> {}", messages.length);
+        logger.info("new messages found ==> {}", messages.length);
         logger.info("envio para MQ ... ");
         setSeenisTrue(messages);
-
-        //start multithead para envio para fila
-//        idleThread = new Thread() {
-//            @Override
-//            public void run() {
-//                logger.info("Start the Email Receiving Thread");
-//                while (true) {
-//                    try {
-//                        imapFolder.idle();
-//                    } catch (FolderClosedException e) {
-//                        logger.info("Reopen the imap folder");
-//                        try {
-//                            imapFolder = reopenFolder();
-//                        } catch (MessagingException e1) {
-//                            logger.warn("Failed to reopen the imap folder abort", e1);
-//                            break;
-//                        }
-//                    } catch (Exception e) {
-//                        logger.warn("Failed to run IDLE command; abort", e);
-//                        break;
-//                    }
-//                }
-//                logger.info("Stop the Email Receiving Thread");
-//            }
-//        };
-//        idleThread.start();
     }
 
     private void setSeenisTrue(Message [] msgs) {
@@ -112,10 +117,10 @@ public class MailboxServiceImpl {
     }
 
     private IMAPFolder reopenFolder() throws MessagingException {
-        if (store == null || !store.isConnected()) {
+        if (imapStore == null || !imapStore.isConnected()) {
             connectEmail();
         }
-        IMAPFolder folder = (IMAPFolder) store.getFolder(FOLDER_INBOX);
+        IMAPFolder folder = (IMAPFolder) imapStore.getFolder(FOLDER_INBOX);
         folder.open(Folder.READ_ONLY);
         return folder;
     }
