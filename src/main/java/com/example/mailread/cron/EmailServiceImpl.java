@@ -1,7 +1,5 @@
-package com.example.mailread.cron.service;
+package com.example.mailread.cron;
 
-import com.example.mailread.cron.configs.EmailCredentials;
-import com.example.mailread.cron.configs.EmailVO;
 import com.sun.mail.imap.IMAPFolder;
 import com.sun.mail.imap.IMAPStore;
 import org.slf4j.Logger;

@@ -1,6 +1,7 @@
-package com.example.mailread.cron.configs;
+package com.example.mailread.cron;
 
-import com.example.mailread.cron.service.EmailService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -11,14 +12,19 @@ import java.io.IOException;
 
 @RestController
 public class EmailController {
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Autowired
-    private EmailService emailService;
+    private EmailServiceImpl emailService;
 
-    @RequestMapping(value = "/", method = RequestMethod.GET)
+    public EmailController(EmailServiceImpl emailService){
+        this.emailService = emailService;
+    }
+
+    @RequestMapping(value = "/ls", method = RequestMethod.GET)
     public void sendEmail() {
         try {
-            emailService.getEmailsNeverSeen();
+            emailService.getNewMessages();
         } catch (MessagingException | IOException e) {
             e.printStackTrace();
         }

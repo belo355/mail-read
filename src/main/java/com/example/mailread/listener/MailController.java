@@ -13,7 +13,7 @@ public class MailController {
     @Autowired
     private MailboxServiceImpl mailboxServiceImpl;
 
-    @RequestMapping(value = "/teste", method = RequestMethod.GET)
+    @RequestMapping(value = "/cron", method = RequestMethod.GET)
     public void startListener() {
         try {
             mailboxServiceImpl.start();

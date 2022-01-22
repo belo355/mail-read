@@ -1,4 +1,4 @@
-package com.example.mailread.cron.configs;
+package com.example.mailread.cron;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

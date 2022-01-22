@@ -33,7 +33,7 @@ public class MailboxServiceImpl {
     public void start() throws MessagingException, UnsupportedOperationException {
         try {
             connectEmail();
-            openFolder(FOLDER_INBOX);
+            openFolder();
             startEmailListener();
         } catch (MessagingException e) {
             logger.error("Error on verifying new messages: {} ", e.getMessage());
@@ -70,7 +70,7 @@ public class MailboxServiceImpl {
         idleThread = new Thread() {
             @Override
             public void run() {
-                logger.info("Start the Email Receiving ThreadID ==> {}", idleThread.getId());
+                logger.info("Start the Email Receiving");
                 while(true) {
                     try {
                         imapFolder.idle(); //analisar tempo de inatividade de regra para novo idle  -- https://stackovergo.com/pt/q/963390/javamail-keeping-imapfolderidle-alive
@@ -99,10 +99,10 @@ public class MailboxServiceImpl {
         Message [] messages = searchForNewMessages(folder);
         logger.info("new messages found ==> {}", messages.length);
         logger.info("envio para MQ ... ");
-        setSeenisTrue(messages);
+        setSeenMessage(messages);
     }
 
-    private void setSeenisTrue(Message [] msgs) {
+    private void setSeenMessage(Message [] msgs) {
         List<Message> messages = Arrays.asList(msgs);
         messages.forEach(message -> {
             try {
@@ -122,8 +122,8 @@ public class MailboxServiceImpl {
         return folder;
     }
 
-    private void openFolder(String folderName) throws MessagingException {
-        this.imapFolder = (IMAPFolder) imapStore.getFolder(folderName);
+    private void openFolder() throws MessagingException {
+        this.imapFolder = (IMAPFolder) imapStore.getFolder(FOLDER_INBOX);
         if (this.imapFolder != null) {
             this.imapFolder.open(Folder.READ_WRITE);
             logger.info("folder open!");
@@ -137,20 +137,6 @@ public class MailboxServiceImpl {
         this.imapStore = (IMAPStore) emailSession.getStore(IMAP_PROTOCOL);
         this.imapStore.connect(HOST, PORT, USER, PASS);
         logger.info("connected email!");
-    }
-
-    private void closeFolder() throws MessagingException {
-        if (imapFolder != null) {
-            imapFolder.close(false);
-            logger.info("folder closed!");
-        }
-    }
-
-    private void closeImapStore() throws MessagingException {
-        if (imapStore != null) {
-            imapStore.close();
-            logger.info("store closed!");
-        }
     }
 
     private Message[] searchForNewMessages(Folder folder) throws MessagingException {
