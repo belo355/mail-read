@@ -5,6 +5,7 @@ import com.sun.mail.imap.IMAPStore;
 import com.sun.mail.imap.* ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.mail.*;
@@ -18,12 +19,24 @@ import java.util.*;
 
 @Service
 public class MailboxServiceImpl {
-    private static final String FOLDER_INBOX = "INBOX";
-    private static final String IMAP_PROTOCOL = "imaps";
-    private static final String HOST = "imap.gmail.com";
-    private static final String USER = "anyteste123@gmail.com";
-    private static final String PASS = "!@#Mudar";
-    private static final int PORT = 993;
+
+    @Value("${email.read.folder}")
+    private String folder;
+
+    @Value("${email.read.protocol}")
+    private String protocol;
+
+    @Value("${email.read.host}")
+    private String host;
+
+    @Value("${email.read.user}")
+    private String user;
+
+    @Value("${email.read.pass}")
+    private String pass;
+
+    @Value("${email.read.port}")
+    private int port;
 
     private IMAPStore imapStore;
     private IMAPFolder imapFolder;
@@ -117,13 +130,13 @@ public class MailboxServiceImpl {
         if (imapStore == null || !imapStore.isConnected()) {
             connectEmail();
         }
-        IMAPFolder folder = (IMAPFolder) imapStore.getFolder(FOLDER_INBOX);
+        IMAPFolder folder = (IMAPFolder) imapStore.getFolder(this.folder);
         folder.open(Folder.READ_ONLY);
         return folder;
     }
 
     private void openFolder() throws MessagingException {
-        this.imapFolder = (IMAPFolder) imapStore.getFolder(FOLDER_INBOX);
+        this.imapFolder = (IMAPFolder) imapStore.getFolder(this.folder);
         if (this.imapFolder != null) {
             this.imapFolder.open(Folder.READ_WRITE);
             logger.info("folder open!");
@@ -134,8 +147,8 @@ public class MailboxServiceImpl {
 
     private void connectEmail() throws MessagingException {
         Session emailSession = Session.getDefaultInstance(new Properties());
-        this.imapStore = (IMAPStore) emailSession.getStore(IMAP_PROTOCOL);
-        this.imapStore.connect(HOST, PORT, USER, PASS);
+        this.imapStore = (IMAPStore) emailSession.getStore(this.protocol);
+        this.imapStore.connect(this.host, this.port, this.user, this.pass);
         logger.info("connected email!");
     }
 

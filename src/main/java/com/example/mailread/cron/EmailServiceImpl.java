@@ -4,7 +4,6 @@ import com.sun.mail.imap.IMAPFolder;
 import com.sun.mail.imap.IMAPStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.mail.*;
@@ -29,26 +28,20 @@ public class EmailServiceImpl extends Thread {
     private static final String PASS = "!@#Mudar";
     private static final String IMAP_PROTOCOL = "imaps";
 
-    private EmailCredentials emailCredentials;
     private IMAPStore imapStore;
     private IMAPFolder imapFolder;
-
-    @Autowired
-    public EmailServiceImpl(EmailCredentials emailCredentials) {
-        this.emailCredentials = emailCredentials;
-    }
 
     public List<EmailVO> getNewMessages() throws MessagingException, IOException {
         logger.info("Verifying new messages inbox...");
         try {
             connectEmail();
-            getFolder(FOLDER_INBOX);
+            getFolder();
             List<EmailVO> emailVOS = readMessagesFromFolderAndSetFlagSeen(imapFolder);
             logger.info("Success on verifying new messages inbox!");
             return emailVOS;
-        } catch (MessagingException | IOException exception) {
-            logger.error("Error on verifying new messages: " + exception.getMessage());
-            throw exception;
+        } catch (MessagingException | IOException e) {
+            logger.error("Error on verifying new messages: " + e.getMessage());
+            throw e;
         } finally {
             closeFolder(imapFolder);
             closeImapStore();
@@ -62,8 +55,8 @@ public class EmailServiceImpl extends Thread {
         logger.info("connected email!");
     }
 
-    private void getFolder(String folderName) throws MessagingException {
-        this.imapFolder = (IMAPFolder) imapStore.getFolder(folderName);
+    private void getFolder() throws MessagingException {
+        this.imapFolder = (IMAPFolder) imapStore.getFolder(FOLDER_INBOX);
         if (this.imapFolder != null) {
             this.imapFolder.open(Folder.READ_WRITE);
             logger.info("folder open!");
@@ -112,10 +105,8 @@ public class EmailServiceImpl extends Thread {
 
         final SearchTerm[] filters = {unseenFlagTerm, subjectSearchTerm};
         final SearchTerm searchTerm = new AndTerm(filters);
-//        List<Message> messagesList = Arrays.asList(messages);
         return folder.search(searchTerm);
     }
-
 
     private void closeFolder(Folder inbox) throws MessagingException {
         if (inbox != null) {
@@ -128,5 +119,4 @@ public class EmailServiceImpl extends Thread {
             imapStore.close();
         }
     }
-
 }
