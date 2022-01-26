@@ -1,7 +1,5 @@
 package com.example.mailread.listener;
 
-import com.sun.mail.imap.IMAPStore;
-
 import com.sun.mail.imap.* ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +9,7 @@ import org.springframework.stereotype.Service;
 import javax.mail.*;
 import javax.mail.event.MessageCountEvent;
 import javax.mail.event.MessageCountListener;
+import javax.mail.internet.MimeMessage;
 import javax.mail.search.AndTerm;
 import javax.mail.search.FlagTerm;
 import javax.mail.search.SearchTerm;
@@ -40,7 +39,6 @@ public class MailboxServiceImpl {
 
     private IMAPStore imapStore;
     private IMAPFolder imapFolder;
-    private Thread idleThread;
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public void start() throws MessagingException, UnsupportedOperationException {
@@ -80,17 +78,18 @@ public class MailboxServiceImpl {
         };
         imapFolder.addMessageCountListener(messageCountListener);
 
-        idleThread = new Thread() {
+        //analisar tempo de inatividade de regra para novo idle  -- https://stackovergo.com/pt/q/963390/javamail-keeping-imapfolderidle-alive
+        Thread idleThread = new Thread() {
             @Override
             public void run() {
                 logger.info("Start the Email Receiving");
-                while(true) {
+                while (true) {
                     try {
                         imapFolder.idle(); //analisar tempo de inatividade de regra para novo idle  -- https://stackovergo.com/pt/q/963390/javamail-keeping-imapfolderidle-alive
                     } catch (FolderClosedException e) {
                         logger.info("Reopen the imap folder");
                         try {
-                            imapFolder = reopenFolder();
+                            reopenFolder();
                         } catch (MessagingException e1) {
                             logger.warn("Failed to reopen the imap folder abort", e1);
                             break;
@@ -126,13 +125,12 @@ public class MailboxServiceImpl {
         });
     }
 
-    private IMAPFolder reopenFolder() throws MessagingException {
+    private void reopenFolder() throws MessagingException {
         if (imapStore == null || !imapStore.isConnected()) {
             connectEmail();
         }
-        IMAPFolder folder = (IMAPFolder) imapStore.getFolder(this.folder);
-        folder.open(Folder.READ_ONLY);
-        return folder;
+        this.imapFolder = (IMAPFolder) imapStore.getFolder(this.folder);
+        imapFolder.open(Folder.READ_ONLY);
     }
 
     private void openFolder() throws MessagingException {

@@ -31,14 +31,14 @@ public class EmailServiceImpl extends Thread {
     private IMAPStore imapStore;
     private IMAPFolder imapFolder;
 
-    public List<EmailVO> getNewMessages() throws MessagingException, IOException {
+    public List<EmailDTO> getNewMessages() throws MessagingException, IOException {
         logger.info("Verifying new messages inbox...");
         try {
             connectEmail();
             getFolder();
-            List<EmailVO> emailVOS = readMessagesFromFolderAndSetFlagSeen(imapFolder);
+            List<EmailDTO> emailDTOS = readMessagesFromFolderAndSetFlagSeen(imapFolder);
             logger.info("Success on verifying new messages inbox!");
-            return emailVOS;
+            return emailDTOS;
         } catch (MessagingException | IOException e) {
             logger.error("Error on verifying new messages: " + e.getMessage());
             throw e;
@@ -65,7 +65,7 @@ public class EmailServiceImpl extends Thread {
         }
     }
 
-    private List<EmailVO> readMessagesFromFolderAndSetFlagSeen(Folder folder) throws MessagingException, IOException {
+    private List<EmailDTO> readMessagesFromFolderAndSetFlagSeen(Folder folder) throws MessagingException, IOException {
         if (folder == null) {
             logger.info("No folder found.");
             return new ArrayList<>();
@@ -73,11 +73,11 @@ public class EmailServiceImpl extends Thread {
         Message[] messages = getNewMessages(folder);
         if (messages.length == 0) logger.info("No messages found.");
 
-        List<EmailVO> emails = new ArrayList<>();
+        List<EmailDTO> emails = new ArrayList<>();
         for (Message message : messages) {
             Address[] from = message.getFrom();
 
-            emails.add(EmailVO.builder()
+            emails.add(EmailDTO.builder()
                     .from(((InternetAddress) from[0]).getAddress())
                     .subject(message.getSubject())
                     .content(message.getContent().toString())

@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class EmailVO {
+public class EmailDTO {
     private String subject;
     private String from;
     private String content;
