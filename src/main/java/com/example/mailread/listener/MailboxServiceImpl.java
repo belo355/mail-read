@@ -118,11 +118,17 @@ public class MailboxServiceImpl {
         List<Message> messages = Arrays.asList(msgs);
         messages.forEach(message -> {
             try {
+                String messageId = recuperaId(message);
+                logger.info("messageId recuparado: {}", messageId);
                 message.setFlag(Flags.Flag.SEEN, true);
             } catch (MessagingException e) {
                 e.printStackTrace();
             }
         });
+    }
+
+    private String recuperaId(Message message) throws MessagingException {
+        return ((IMAPMessage) message).getMessageID();
     }
 
     private void reopenFolder() throws MessagingException {

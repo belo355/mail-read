@@ -37,7 +37,7 @@ public class EmailServiceImpl extends Thread {
             connectEmail();
             getFolder();
             List<EmailDTO> emailDTOS = readMessagesFromFolderAndSetFlagSeen(imapFolder);
-            logger.info("Success on verifying new messages inbox!");
+            logger.info("Success on verifying new messages inbox! .. total emails: " + emailDTOS.size());
             return emailDTOS;
         } catch (MessagingException | IOException e) {
             logger.error("Error on verifying new messages: " + e.getMessage());
@@ -89,7 +89,7 @@ public class EmailServiceImpl extends Thread {
 
     private Message[] getNewMessages(Folder folder) throws MessagingException {
         Flags seen = new Flags(Flags.Flag.SEEN);
-        FlagTerm unseenFlagTerm = new FlagTerm(seen, false);
+        FlagTerm unseenFlagTerm = new FlagTerm(seen, true);
 
         SearchTerm subjectSearchTerm = new SearchTerm() {
             @Override
