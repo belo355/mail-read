@@ -6,6 +6,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.mail.MessagingException;
 
+/**
+ * The type Mail controller. --> this controller start listener into mail
+ */
 @RestController
 public class MailController {
 
