@@ -8,15 +8,11 @@ Use the application.properties configure the destination email
 
 ```bash
 
-email.sender.to=you-mail@***.com
-email.sender.host=smtp.gmail.com
-email.sender.port=587
-email.sender.username=your-mail@***.com
-email.sender.password=your-pass
-email.transport.protocol=smtp
-email.smtp.auth=true
-email.smtp.starttls.enable=true
-email.debug=false aa
-email.from.address=you-mail@***.com
+email.read.host=imap.gmail.com
+email.read.protocol=imaps
+email.read.folder=INBOX
+email.read.user=your-mail@rprovider.com
+email.read.pass=your-pass
+email.read.port=993
 
 ```
