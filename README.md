@@ -1,6 +1,6 @@
 # Mail Read
 
-MR is a java application for reading with listener or cron-job to a configured mailbox
+MR is a java application for reading with listener or cron-job to a configured mailbox provider of your choice
 
 ## Confg
 
