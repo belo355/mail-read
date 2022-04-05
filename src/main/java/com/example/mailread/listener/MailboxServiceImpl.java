@@ -42,15 +42,15 @@ public class MailboxServiceImpl {
 
     public void start() throws MessagingException, UnsupportedOperationException {
         try {
-            connectEmail();
+            connectMail();
             openFolder();
-            startEmailListener();
+            startMailListener();
         } catch (MessagingException e) {
             logger.error("Error on verifying new messages: {} ", e.getMessage());
         }
     }
 
-    private void startEmailListener() throws MessagingException {
+    private void startMailListener() throws MessagingException {
         if (!((IMAPStore)imapFolder.getStore()).hasCapability("IDLE")) {
             throw new UnsupportedOperationException("The imap server does not support IDLE command");
         }
@@ -67,7 +67,7 @@ public class MailboxServiceImpl {
             @Override
             public void messagesAdded(MessageCountEvent e) {
                 try {
-                    handleMessages(imapFolder);
+                    handleMessage(imapFolder);
                 } catch (Exception e1) {
                     logger.error("Unexpected error occurs while handling messages", e1);
                 }
@@ -77,14 +77,13 @@ public class MailboxServiceImpl {
         };
         imapFolder.addMessageCountListener(messageCountListener);
 
-        //analisar tempo de inatividade de regra para novo idle  -- https://stackovergo.com/pt/q/963390/javamail-keeping-imapfolderidle-alive
         Thread idleThread = new Thread() {
             @Override
             public void run() {
                 logger.info("Start the Email Receiving");
                 while (true) {
                     try {
-                        imapFolder.idle(); //analisar tempo de inatividade de regra para novo idle  -- https://stackovergo.com/pt/q/963390/javamail-keeping-imapfolderidle-alive
+                        imapFolder.idle();
                     } catch (FolderClosedException e) {
                         logger.info("Reopen the imap folder");
                         try {
@@ -105,11 +104,9 @@ public class MailboxServiceImpl {
     }
 
 
-    private void handleMessages(IMAPFolder folder) throws MessagingException {
+    private void handleMessage(IMAPFolder folder) throws MessagingException {
         logger.info("new mail received! ==> total mails ==> {}, momento ==> {}", folder.getMessageCount(), LocalTime.now());
         Message [] messages = searchForNewMessages(folder);
-        logger.info("new messages found ==> {}", messages.length);
-        logger.info("envio para MQ ... ");
         setSeenMessage(messages);
     }
 
@@ -117,7 +114,7 @@ public class MailboxServiceImpl {
         List<Message> messages = Arrays.asList(msgs);
         messages.forEach(message -> {
             try {
-                String messageId = recuperaId(message);
+                String messageId = getID(message);
                 logger.info("messageId recuparado: {}", messageId);
                 message.setFlag(Flags.Flag.SEEN, true);
             } catch (MessagingException e) {
@@ -126,13 +123,13 @@ public class MailboxServiceImpl {
         });
     }
 
-    private String recuperaId(Message message) throws MessagingException {
+    private String getID(Message message) throws MessagingException {
         return ((IMAPMessage) message).getMessageID();
     }
 
     private void reopenFolder() throws MessagingException {
         if (imapStore == null || !imapStore.isConnected()) {
-            connectEmail();
+            connectMail();
         }
         this.imapFolder = (IMAPFolder) imapStore.getFolder(this.folder);
         imapFolder.open(Folder.READ_ONLY);
@@ -148,7 +145,7 @@ public class MailboxServiceImpl {
         }
     }
 
-    private void connectEmail() throws MessagingException {
+    private void connectMail() throws MessagingException {
         Session emailSession = Session.getDefaultInstance(new Properties());
         this.imapStore = (IMAPStore) emailSession.getStore(this.protocol);
         this.imapStore.connect(this.host, this.port, this.user, this.pass);

@@ -1,4 +1,4 @@
-package com.example.mailread.cron;
+package com.example.mailread.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,7 +17,7 @@ public class EmailController {
         this.emailService = emailService;
     }
 
-    @GetMapping(value = "/cron")
+    @GetMapping(value = "/run")
     public void sendEmail() {
         try {
             emailService.getNewMessages();
