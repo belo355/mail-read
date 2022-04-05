@@ -1,4 +1,4 @@
-package com.example.mailread.cron;
+package com.example.mailread.controller;
 
 import com.sun.mail.imap.IMAPFolder;
 import com.sun.mail.imap.IMAPStore;
@@ -24,8 +24,8 @@ public class EmailServiceImpl extends Thread {
     private static final String FOLDER_INBOX = "INBOX";
     private static final String HOST = "imap.gmail.com";
     private static final int PORT = 993;
-    private static final String USER = "anyteste123@gmail.com";
-    private static final String PASS = "!@#Mudar";
+    private static final String USER = "your-mail@teste.com";
+    private static final String PASS = "your-pass";
     private static final String IMAP_PROTOCOL = "imaps";
 
     private IMAPStore imapStore;
@@ -37,10 +37,10 @@ public class EmailServiceImpl extends Thread {
             connectEmail();
             getFolder();
             List<EmailDTO> emailDTOS = readMessagesFromFolderAndSetFlagSeen(imapFolder);
-            logger.info("Success on verifying new messages inbox! .. total emails: " + emailDTOS.size());
+            logger.info("Success on verifying new messages inbox! .. total emails: {}", emailDTOS.size());
             return emailDTOS;
         } catch (MessagingException | IOException e) {
-            logger.error("Error on verifying new messages: " + e.getMessage());
+            logger.error("Error on verifying new messages: {}", e.getMessage());
             throw e;
         } finally {
             closeFolder(imapFolder);
